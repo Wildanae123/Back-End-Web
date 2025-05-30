@@ -1,0 +1,45 @@
+# docker-compose.yml
+version: '3.8' # Specify a version for Docker Compose file format
+
+services:
+  db: # This is our PostgreSQL database service
+    image: postgres:14-alpine # Using a specific version of PostgreSQL (e.g., 14-alpine)
+    container_name: ghibli_postgres_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER} # Reads from your .env file
+      POSTGRES_PASSWORD: ${DB_PASSWORD} # Reads from your .env file
+      POSTGRES_DB: ${DB_NAME} # Reads from your .env file
+    volumes:
+      - ghibli_db_data:/var/lib/postgresql/data # Persist database data
+    ports:
+      - "5432:5432" # Map host port 5432 to container port 5432 (for external tools like pgAdmin/DBeaver)
+    networks:
+      - ghibli_network
+
+  api: # This is your Node.js Express API service
+    build:
+      context: . # Build from the Dockerfile in the current directory
+      dockerfile: Dockerfile
+    container_name: ghibli_api_server
+    restart: unless-stopped
+    env_file:
+      - .env # Load environment variables from .env file for the API container
+    ports:
+      - "5000:5000" # Map host port 5000 to container port 5000
+    depends_on:
+      - db # Ensures 'db' service starts before 'api' service
+    networks:
+      - ghibli_network
+    # For development, you might want to mount your src directory to see live code changes
+    # Be cautious with node_modules mounting; often better to let the container manage it.
+    # volumes:
+    #   - ./src:/usr/src/app/src
+    #   - /usr/src/app/node_modules # Anonymous volume to prevent host node_modules overwriting container's
+
+volumes:
+  ghibli_db_data: # Defines a named volume for data persistence
+
+networks:
+  ghibli_network: # Defines a custom network for services to communicate
+    driver: bridge

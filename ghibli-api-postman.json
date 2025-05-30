@@ -1,0 +1,2260 @@
+{
+  "info": {
+    "_postman_id": "GENERATED_UUID",
+    "name": "Ghibli Food Bookshelf API Test Collection",
+    "description": "Test requests for the Ghibli Food Bookshelf API.\nAuthentication is cookie-based (HttpOnly). After logging in via /auth/login or /auth/register, \nPostman will automatically handle the session cookie for subsequent protected requests.\nProtected routes are marked with a `security` requirement.\nReplace `{{bookId}}` (collection variable) with an ID from a created book for relevant tests.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "bookId",
+      "value": "",
+      "type": "string",
+      "description": "Automatically set by 'Books - Post Book With Complete Data' for chained tests."
+    },
+    {
+      "key": "myCustomIdKey",
+      "value": "{{wildanNotesBookId}}",
+      "description": "The ID of Wildan's Notes for this request"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "description": "Requests related to Auth",
+      "item": [
+        {
+          "name": "Auth - Guest Login",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/guest/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "guest", "login"]
+            },
+            "description": "Login as a guest user"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Response has message and user object with role 'guest'\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    pm.expect(jsonData).to.have.property('user');",
+                  "    pm.expect(jsonData.user).to.be.an('object');",
+                  "    pm.expect(jsonData.user.role).to.eql('guest');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Auth - Logout User",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            },
+            "description": "Logout a user\n\nSecurity: Cookie-based (HttpOnly). Postman handles this automatically after login or registration."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has a logout success message\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    pm.expect(jsonData.message.toLowerCase()).to.include('logout successful');",
+                  "});",
+                  "",
+                  "pm.test(\"Session cookie should be cleared (conceptual check)\", function() {",
+                  "    // Postman automatically handles cookies, but for a logout,",
+                  "    // we might expect certain session cookies to be gone.",
+                  "    // This is more of a conceptual test unless you know the exact cookie name",
+                  "    // and can verify its absence or expiration, which can be complex.",
+                  "    // For now, we're primarily relying on the 200 status and message.",
+                  "    // Example: if your session cookie was named 'token':",
+                  "    // const sessionCookie = pm.cookies.get('token');",
+                  "    // pm.expect(sessionCookie).to.be.undefined; // Or check its Max-Age/Expires if server sets it to expire immediately",
+                  "    console.log(\"Conceptual check: Server should have cleared session cookies.\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Auth - Register New User - Register a new regular user",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"User\",\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Register a new user"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201 Created\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test(\"Response has message and user object\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    pm.expect(jsonData).to.have.property('user');",
+                  "    pm.expect(jsonData.user).to.be.an('object');",
+                  "});",
+                  "pm.test(\"User object has id, name, email, and role\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.user).to.have.all.keys('id', 'name', 'email', 'role');",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "    console.log(\"Login successful and tests passed. Setting next request to 'Auth - Logout User'.\");",
+                  "    postman.setNextRequest(\"Auth - Logout User\");",
+                  "} else {",
+                  "    console.log(\"Login failed or tests did not pass as expected. Not proceeding to logout automatically.\");",
+                  "    // To stop the collection run if login fails, you can uncomment the next line:",
+                  "    // postman.setNextRequest(null);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Auth - Login User - Login as a regular user",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login an existing user"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Response has message and user object\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    pm.expect(jsonData).to.have.property('user');",
+                  "    pm.expect(jsonData.user).to.be.an('object');",
+                  "});",
+                  "pm.test(\"User object contains expected fields\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.user).to.have.property('id');",
+                  "    pm.expect(jsonData.user).to.have.property('email', 'user@example.com');",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "    console.log(\"Login successful and tests passed. Setting next request to 'Auth - Logout User'.\");",
+                  "    postman.setNextRequest(\"Auth - Logout User\");",
+                  "} else {",
+                  "    console.log(\"Login failed or tests did not pass as expected. Not proceeding to logout automatically.\");",
+                  "    // To stop the collection run if login fails, you can uncomment the next line:",
+                  "    // postman.setNextRequest(null);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Auth - Register New User - Register a new admin user (DEV/SETUP ONLY - Protect this capability in Production!)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Super User (Admin)\",\n  \"email\": \"admin@example.com\",\n  \"password\": \"strongAdminPassword123\",\n  \"role\": \"admin\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Register a new user"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201 Created\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has message and user object\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    pm.expect(jsonData).to.have.property('user');",
+                  "    pm.expect(jsonData.user).to.be.an('object');",
+                  "});",
+                  "",
+                  "pm.test(\"User object has correct details for admin registration\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.user).to.have.property('id');",
+                  "    pm.expect(jsonData.user.name).to.eql('Super User (Admin)');",
+                  "    pm.expect(jsonData.user.email).to.eql('admin@example.com');",
+                  "    pm.expect(jsonData.user.role).to.eql('strongAdminPassword123');",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "    console.log(\"Login successful and tests passed. Setting next request to 'Auth - Logout User'.\");",
+                  "    postman.setNextRequest(\"Auth - Logout User\");",
+                  "} else {",
+                  "    console.log(\"Login failed or tests did not pass as expected. Not proceeding to logout automatically.\");",
+                  "    // To stop the collection run if login fails, you can uncomment the next line:",
+                  "    // postman.setNextRequest(null);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Auth - Login User - Login as an admin user",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Super User (Admin)\",\n  \"email\": \"admin@example.com\",\n  \"password\": \"strongAdminPassword123\",\n  \"role\": \"admin\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login an existing user"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has message and user object\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    pm.expect(jsonData).to.have.property('user');",
+                  "    pm.expect(jsonData.user).to.be.an('object');",
+                  "});",
+                  "",
+                  "pm.test(\"User object has expected details for admin login\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.user).to.have.property('id');",
+                  "    pm.expect(jsonData.user).to.have.property('name'); // Name might be different from request body",
+                  "    pm.expect(jsonData.user.email).to.eql('admin@example.com');",
+                  "    pm.expect(jsonData.user.role).to.eql('admin');",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "    console.log(\"Login successful and tests passed. Setting next request to 'Auth - Logout User'.\");",
+                  "    postman.setNextRequest(\"Auth - Logout User\");",
+                  "} else {",
+                  "    console.log(\"Login failed or tests did not pass as expected. Not proceeding to logout automatically.\");",
+                  "    // To stop the collection run if login fails, you can uncomment the next line:",
+                  "    // postman.setNextRequest(null);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Books",
+      "description": "Requests related to Books",
+      "item": [
+        {
+          "name": "Books - Post Book With Complete Data",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Kiki's Bakery Everyday Recipes\",\n  \"author\": \"Ursula (Illustrator)\",\n  \"isbn\": \"978-3-16-148410-0\",\n  \"genre\": \"Baking\",\n  \"description\": \"A complete collection of delightful breads and pastries.\",\n  \"publishedDate\": \"2024-10-15\",\n  \"bookCoverUrl\": \"http://example.com/kiki_everyday.jpg\",\n  \"isRead\": false,\n  \"review\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/books",
+              "host": ["{{baseUrl}}"],
+              "path": ["books"]
+            },
+            "description": "Create a New Book (Protected)\n\nSecurity: Cookie-based (HttpOnly). Postman handles this automatically after login or registration."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201 Created\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test(\"Response body contains created book details and an ID\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('title', \"Kiki's Bakery Everyday Recipes\");",
+                  "    pm.expect(jsonData).to.have.property('author', \"Ursula (Illustrator)\");",
+                  "    pm.expect(jsonData).to.have.property('genre', 'Baking');",
+                  "    // Save the created book ID to a collection variable",
+                  "    if (jsonData.id) {",
+                  "        pm.collectionVariables.set(\"bookId\", jsonData.id);",
+                  "        console.log(\"Set bookId to: \" + jsonData.id);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Books - Post Book Without Name",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"author\": \"Kamaji\",\n  \"genre\": \"Herbal Brews\",\n  \"description\": \"Boiler room specialty beverages.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/books",
+              "host": ["{{baseUrl}}"],
+              "path": ["books"]
+            },
+            "description": "Create a New Book (Protected)\n\nSecurity: Cookie-based (HttpOnly). Postman handles this automatically after login or registration."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400 Bad Request for missing title\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test(\"Response body contains an error message related to title\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    // Optionally, check if errors array exists and mentions 'title'",
+                  "    if (jsonData.errors && Array.isArray(jsonData.errors)) {",
+                  "        let titleErrorFound = jsonData.errors.some(err => err.path === 'title');",
+                  "        pm.expect(titleErrorFound, \"Error message for title field should be present\").to.be.true;",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Books - Post Book 'My Wildan Notes' (isFinished: false, isRead: true)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"My Wildan Notes\",\n  \"author\": \"Wildan User\",\n  \"isbn\": \"978-0-11-223344-2\",\n  \"genre\": \"Personal Notes\",\n  \"description\": \"A collection of personal notes by Wildan. The content is actively being updated, and the user has read the current version.\",\n  \"isFinished\": false,\n  \"isRead\": true,\n  \"review\": 4 \n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/books",
+              "host": ["{{baseUrl}}"],
+              "path": ["books"]
+            },
+            "description": "Create a new book titled 'My Wildan Notes'.\n\nBook Status: 'isFinished' is false (e.g., ongoing notes).\nUser Progress: 'isRead' is true (user has read the current content).\n\nSecurity: Cookie-based (HttpOnly). Postman handles this automatically after login or registration."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201 Created\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"Response body contains created book details: 'My Wildan Notes', isFinished:false, isRead:true\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData.title).to.eql(\"My Wildan Notes\");",
+                  "    pm.expect(jsonData.author).to.eql(\"Wildan User\");",
+                  "    pm.expect(jsonData.isFinished).to.be.false;",
+                  "    pm.expect(jsonData.isRead).to.be.true;",
+                  "    if (jsonData.hasOwnProperty('review')) {",
+                  "        pm.expect(jsonData.review).to.eql(4);",
+                  "    }",
+                  "});",
+                  "",
+                  "pm.test(\"Created book ID for 'My Wildan Notes' is saved\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    if (jsonData.id) {",
+                  "        pm.collectionVariables.set(\"wildanNotesBookId\", jsonData.id);",
+                  "        console.log(\"Set wildanNotesBookId to: \" + jsonData.id);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Books - Post Book (Status: isFinished true, User: isRead true)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Ponyo's Grand Ocean Feasts (Finished Collection)\",\n  \"author\": \"Lisa & Granmamare\",\n  \"isbn\": \"978-712-05-1847-9\",\n  \"genre\": \"Seafood\",\n  \"description\": \"All of Ponyo's favorite meals, cataloged as a finished work.\",\n  \"isFinished\": true,\n  \"isRead\": true,\n  \"review\": 5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/books",
+              "host": ["{{baseUrl}}"],
+              "path": ["books"]
+            },
+            "description": "Create a New Book (Protected)\n\nExample Scenario: Creates a book with its inherent status 'isFinished' as true, and user's 'isRead' status also as true.\n\nSecurity: Cookie-based (HttpOnly). Postman handles this automatically after login or registration."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201 Created\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"Response body contains created book details with 'isFinished' and 'isRead' as true\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData.title).to.eql(\"Ponyo's Grand Ocean Feasts (Finished Collection)\");",
+                  "    pm.expect(jsonData.author).to.eql(\"Lisa & Granmamare\");",
+                  "    pm.expect(jsonData.genre).to.eql(\"Seafood\");",
+                  "    pm.expect(jsonData.isFinished).to.be.true; // Verifies the new attribute",
+                  "    pm.expect(jsonData.isRead).to.be.true;     // Verifies user reading progress",
+                  "    pm.expect(jsonData.review).to.eql(5);",
+                  "});",
+                  "",
+                  "pm.test(\"Created book ID (for book with isFinished:true) is saved to collection variable\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    if (jsonData.id) {",
+                  "        pm.collectionVariables.set(\"finishedBookId\", jsonData.id);",
+                  "        console.log(\"Set finishedBookId (book with isFinished:true) to: \" + jsonData.id);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Books - Post Book (Status: isFinished false, User: isRead false)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"The Cat Returns: Tea Time Tales (Ongoing Series)\",\n  \"author\": \"Haru Yoshioka\",\n  \"isbn\": \"978-1-23-456789-7\",\n  \"genre\": \"Light Meals\",\n  \"description\": \"Simple recipes for an afternoon with feline friends. This series is ongoing and the user has not started reading it.\",\n  \"isFinished\": false,\n  \"isRead\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/books",
+              "host": ["{{baseUrl}}"],
+              "path": ["books"]
+            },
+            "description": "Create a New Book (Protected)\n\nExample Scenario: Creates a book with its inherent status 'isFinished' as false (e.g., an ongoing series) and the user's 'isRead' status as false.\n\nSecurity: Cookie-based (HttpOnly). Postman handles this automatically after login or registration."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201 Created\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"Response body contains created book details with 'isFinished' and 'isRead' as false\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData.title).to.eql(\"The Cat Returns: Tea Time Tales (Ongoing Series)\");",
+                  "    pm.expect(jsonData.author).to.eql(\"Haru Yoshioka\");",
+                  "    pm.expect(jsonData.genre).to.eql(\"Light Meals\");",
+                  "    pm.expect(jsonData.isFinished).to.be.false;",
+                  "    pm.expect(jsonData.isRead).to.be.false;",
+                  "});",
+                  "",
+                  "pm.test(\"Created book ID (for book with isFinished:false, isRead:false) is saved\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    if (jsonData.id) {",
+                  "        pm.collectionVariables.set(\"unfinishedBookId\", jsonData.id);",
+                  "        console.log(\"Set unfinishedBookId (isFinished:false, isRead:false) to: \" + jsonData.id);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Books - Get All Books (Public)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/books",
+              "host": ["{{baseUrl}}"],
+              "path": ["books"]
+            },
+            "description": "Get All Publicly Visible Books"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Response body is an object with a 'books' array and pagination info\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "    pm.expect(jsonData.books).to.be.an('array');",
+                  "    pm.expect(jsonData).to.have.all.keys('totalItems', 'totalPages', 'currentPage', 'books');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Books - Get All Books (Option to filter by 'My Wildan Notes' ID or Title)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/books?search=My Wildan Notes&id={{wildanNotesBookId}}&page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["books"],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "My Wildan Notes",
+                  "description": "Search term for book title (e.g., 'My Wildan Notes')",
+                  "disabled": false
+                },
+                {
+                  "key": "id",
+                  "value": "{{wildanNotesBookId}}",
+                  "description": "Filter by specific book ID (e.g., the ID of 'My Wildan Notes')",
+                  "disabled": true
+                },
+                {
+                  "key": "genre",
+                  "value": "Personal Notes",
+                  "description": "Filter by genre (e.g., 'Personal Notes' for Wildan Notes)",
+                  "disabled": true
+                },
+                {
+                  "key": "author",
+                  "value": "Wildan User",
+                  "description": "Filter by author (e.g., 'Wildan User' for Wildan Notes)",
+                  "disabled": true
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number for pagination"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Number of items per page"
+                }
+              ]
+            },
+            "description": "Get a list of books. Can be used to search for 'My Wildan Notes' by its title or by its specific ID ({{wildanNotesBookId}}).\nEnable/disable query parameters as needed for your test scenario."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Response contains a 'books' array\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.books).to.be.an('array');",
+                  "});",
+                  "",
+                  "// Example test if searching by ID and expecting one result:",
+                  "if (pm.request.url.query.find(q => q.key === 'id' && !q.disabled)) {",
+                  "    pm.test(\"If searching by ID, expects 'My Wildan Notes' if found\", function() {",
+                  "        const jsonData = pm.response.json();",
+                  "        if (jsonData.books.length === 1) {",
+                  "            pm.expect(jsonData.books[0].id).to.eql(pm.collectionVariables.get(\"wildanNotesBookId\"));",
+                  "            pm.expect(jsonData.books[0].title).to.eql(\"My Wildan Notes\");",
+                  "        } else if (jsonData.books.length === 0) {",
+                  "            console.log(\"No book found with ID: \" + pm.collectionVariables.get(\"wildanNotesBookId\"));",
+                  "        } else {",
+                  "            console.log(\"Multiple books found when filtering by ID, which is unexpected.\");",
+                  "        }",
+                  "    });",
+                  "}",
+                  "// Example test if searching by title:",
+                  "if (pm.request.url.query.find(q => q.key === 'search' && !q.disabled && q.value === 'My Wildan Notes')) {",
+                  "    pm.test(\"If searching by title 'My Wildan Notes', books found should include it\", function() {",
+                  "        const jsonData = pm.response.json();",
+                  "        if (jsonData.books.length > 0) {",
+                  "            let found = jsonData.books.some(book => book.title === \"My Wildan Notes\" && book.id === pm.collectionVariables.get(\"wildanNotesBookId\"));",
+                  "            pm.expect(found, \"'My Wildan Notes' with the correct ID should be in the search results\").to.be.true;",
+                  "        } else {",
+                  "            console.log(\"No books found with title 'My Wildan Notes'\");",
+                  "        }",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Books - Get Details of Book (Status: isFinished true)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/books/:bookId",
+              "host": ["{{baseUrl}}"],
+              "path": ["books", ":bookId"],
+              "variable": [
+                {
+                  "key": "bookId",
+                  "value": "{{finishedBookId}}",
+                  "description": "ID of the book (expected to have isFinished: true)"
+                }
+              ]
+            },
+            "description": "Get details for a specific book that has its inherent status 'isFinished' as true.\n\nEnsure the `{{finishedBookId}}` variable is set to the ID of such a book, typically from the 'Create Book (Status: isFinished true...)' request."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Book 'isFinished' property is true, confirming its finished status\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('isFinished');",
+                  "    pm.expect(jsonData.isFinished).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"Book 'isRead' property (user progress) is also true for this test case\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    // This test assumes the specific book retrieved was also marked as isRead:true during creation.",
+                  "    // Adjust if the user reading progress might differ for the retrieved 'finished' book.",
+                  "    pm.expect(jsonData).to.have.property('isRead');",
+                  "    pm.expect(jsonData.isRead).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Books - Get Details of Book (Status: isFinished false, User: isRead false)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/books/:bookId",
+              "host": ["{{baseUrl}}"],
+              "path": ["books", ":bookId"],
+              "variable": [
+                {
+                  "key": "bookId",
+                  "value": "{{unfinishedBookId}}",
+                  "description": "ID of the book (expected to have isFinished:false and isRead:false)"
+                }
+              ]
+            },
+            "description": "Get details for a specific book that has its inherent status 'isFinished' as false and the user's 'isRead' status as false.\n\nEnsure the `{{unfinishedBookId}}` variable is set, typically from the 'Create Book (Status: isFinished false, User: isRead false)' request."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Book 'isFinished' property is false\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('isFinished');",
+                  "    pm.expect(jsonData.isFinished).to.be.false;",
+                  "});",
+                  "",
+                  "pm.test(\"Book 'isRead' property (user progress) is false\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('isRead');",
+                  "    pm.expect(jsonData.isRead).to.be.false;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Books - Get Detail Books With Correct Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/books/:bookId",
+              "host": ["{{baseUrl}}"],
+              "path": ["books", ":bookId"],
+              "variable": [
+                {
+                  "key": "bookId",
+                  "value": "{{bookId}}",
+                  "description": "ID of the book"
+                }
+              ]
+            },
+            "description": "Get details for a specific book using a correct/existing book ID. Uses {{bookId}} set by a create request."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Response body contains book details with the correct ID\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "    pm.expect(jsonData).to.have.property('id', pm.collectionVariables.get(\"bookId\"));",
+                  "    pm.expect(jsonData).to.have.property('title');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Books - Get Detail Books With Invalid Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/books/:bookId",
+              "host": ["{{baseUrl}}"],
+              "path": ["books", ":bookId"],
+              "variable": [
+                {
+                  "key": "bookId",
+                  "value": "INVALID_ID_FOR_TESTING",
+                  "description": "ID of the book"
+                }
+              ]
+            },
+            "description": "Attempt to get details for a book using an invalid or non-existent book ID. This request is expected to result in an error (e.g., 404 Not Found)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404 Not Found\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Books - Update Book to Finished and Read (isFinished: true, isRead: true)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"The Cat Returns: Tea Time Tales\",\n  \"author\": \"Haru Yoshioka\",\n  \"isbn\": \"978-1-23-456789-7\",\n  \"genre\": \"Light Meals\",\n  \"description\": \"Simple recipes for an afternoon with feline friends. This collection is now finished and has been read by the user.\",\n  \"publishedDate\": \"2024-03-01\",\n  \"bookCoverUrl\": \"http://example.com/covers/cat_returns_final.jpg\",\n  \"isFinished\": true,\n  \"isRead\": true,\n  \"review\": 4\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/books/:bookId",
+              "host": ["{{baseUrl}}"],
+              "path": ["books", ":bookId"],
+              "variable": [
+                {
+                  "key": "bookId",
+                  "value": "{{unfinishedBookId}}",
+                  "description": "ID of the book to update (expected to be 'The Cat Returns' with isFinished:false, isRead:false)"
+                }
+              ]
+            },
+            "description": "Updates an existing book (identified by {{unfinishedBookId}}) to set its status to 'isFinished: true' and the user's progress to 'isRead: true'.\n\nThis request sends a complete representation of the book resource for the update.\n\nSecurity: Cookie-based (HttpOnly). Postman handles this automatically after login or registration."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK for successful update\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response body contains updated book details with isFinished:true and isRead:true\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "    pm.expect(jsonData.id).to.eql(pm.collectionVariables.get(\"unfinishedBookId\"));",
+                  "    pm.expect(jsonData.title).to.eql(\"The Cat Returns: Tea Time Tales\");",
+                  "    pm.expect(jsonData.author).to.eql(\"Haru Yoshioka\");",
+                  "    pm.expect(jsonData.isbn).to.eql(\"978-1-23-456789-7\");",
+                  "    pm.expect(jsonData.isFinished).to.be.true;",
+                  "    pm.expect(jsonData.isRead).to.be.true;",
+                  "    pm.expect(jsonData.review).to.eql(4);",
+                  "    pm.expect(jsonData.description).to.eql(\"Simple recipes for an afternoon with feline friends. This collection is now finished and has been read by the user.\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Books - Update 'My Wildan Notes' to Remove Title (Validation Test)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"\",\n  \"author\": \"Wildan User Updated\",\n  \"isbn\": \"978-0-11-223344-2\",\n  \"genre\": \"Personal Notes Updated\",\n  \"description\": \"Updating 'My Wildan Notes' to have no title (for testing validation).\",\n  \"isFinished\": false,\n  \"isRead\": true,\n  \"review\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/books/:bookId",
+              "host": ["{{baseUrl}}"],
+              "path": ["books", ":bookId"],
+              "variable": [
+                {
+                  "key": "bookId",
+                  "value": "{{wildanNotesBookId}}",
+                  "description": "ID of 'My Wildan Notes' to attempt update on."
+                }
+              ]
+            },
+            "description": "Attempts to update 'My Wildan Notes' (using {{wildanNotesBookId}}) by setting its title to empty. This tests validation for required fields (like title during an update).\n\nSecurity: Cookie-based (HttpOnly). Postman handles this automatically after login or registration."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400 Bad Request for missing title in update\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test(\"Response body indicates an error, preferably about the title field\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "    pm.expect(jsonData).to.have.property('message'); // General error message",
+                  "    // Optionally, check for a specific error related to the 'title' field if your API provides detailed errors",
+                  "    if (jsonData.errors && Array.isArray(jsonData.errors)) {",
+                  "        let titleErrorFound = jsonData.errors.some(err => err.path === 'title' || (err.param === 'title') || (err.msg && err.msg.toLowerCase().includes('title')));",
+                  "        pm.expect(titleErrorFound, \"Specific error for 'title' field should be present in errors array\").to.be.true;",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Books - Update Book with Correct Id",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"New Magical Title Updated\",\n  \"author\": \"Test Author\",\n  \"genre\": \"Updated Genre\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/books/:bookId",
+              "host": ["{{baseUrl}}"],
+              "path": ["books", ":bookId"],
+              "variable": [
+                {
+                  "key": "bookId",
+                  "value": "{{bookId}}",
+                  "description": "ID of the book to update"
+                }
+              ]
+            },
+            "description": "Update a Book by ID (Protected, Owner/Admin). Uses {{bookId}}.\n\nSecurity: Cookie-based (HttpOnly). Postman handles this automatically after login or registration."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Response body contains the updated details\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.title).to.eql(\"New Magical Title Updated\");",
+                  "    pm.expect(jsonData.genre).to.eql(\"Updated Genre\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Books - Update Book with Invalid Id",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Attempted Update on Invalid ID\",\n  \"author\": \"Test Author Invalid ID\",\n  \"genre\": \"Test Genre Invalid ID\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/books/:bookId",
+              "host": ["{{baseUrl}}"],
+              "path": ["books", ":bookId"],
+              "variable": [
+                {
+                  "key": "bookId",
+                  "value": "THIS_IS_AN_INVALID_ID_FORMAT",
+                  "description": "An invalid book ID for testing"
+                }
+              ]
+            },
+            "description": "Attempts to update a book using an invalid or non-existent book ID in the path. Expected to fail (e.g., 404 Not Found or 400 Bad Request).\n\nSecurity: Cookie-based (HttpOnly). Postman handles this automatically after login or registration."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404 Not Found or 400 Bad Request\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 404]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Books - Delete 'My Wildan Notes' (by ID)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/books/:bookId",
+              "host": ["{{baseUrl}}"],
+              "path": ["books", ":bookId"],
+              "variable": [
+                {
+                  "key": "bookId",
+                  "value": "{{wildanNotesBookId}}",
+                  "description": "ID of the book 'My Wildan Notes' to delete."
+                }
+              ]
+            },
+            "description": "Deletes the book titled 'My Wildan Notes' using its specific ID. \n\nEnsure `{{wildanNotesBookId}}` is set from the creation step of 'My Wildan Notes'. Protected endpoint.\n\nSecurity: Cookie-based (HttpOnly). Postman handles this automatically after login or registration."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 204 No Content for successful deletion\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});",
+                  "",
+                  "pm.test(\"Response body should be empty\", function () {",
+                  "    pm.expect(pm.response.text()).to.be.empty;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Books - Delete Book (Status: isFinished true)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/books/:bookId",
+              "host": ["{{baseUrl}}"],
+              "path": ["books", ":bookId"],
+              "variable": [
+                {
+                  "key": "bookId",
+                  "value": "{{finishedBookId}}",
+                  "description": "ID of the book (with isFinished: true) to delete"
+                }
+              ]
+            },
+            "description": "Deletes a book that has its inherent status 'isFinished' as true. Protected endpoint.\n\nEnsure `{{finishedBookId}}` is set to the ID of such a book, typically from the 'Create Book (Status: isFinished true...)' request.\n\nSecurity: Cookie-based (HttpOnly). Postman handles this automatically after login or registration."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 204 No Content for deleting the book\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Books - Delete Book (Status: isFinished false, User: isRead false)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/books/:bookId",
+              "host": ["{{baseUrl}}"],
+              "path": ["books", ":bookId"],
+              "variable": [
+                {
+                  "key": "bookId",
+                  "value": "{{unfinishedBookId}}",
+                  "description": "ID of the book (with isFinished:false and isRead:false) to delete"
+                }
+              ]
+            },
+            "description": "Deletes a book that has its inherent status 'isFinished' as false and the user's 'isRead' status as false. Protected endpoint.\n\nEnsure `{{unfinishedBookId}}` is set, typically from the 'Create Book (Status: isFinished false, User: isRead false)' request.\n\nSecurity: Cookie-based (HttpOnly). Postman handles this automatically after login or registration."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 204 No Content for successful deletion\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});",
+                  "",
+                  "pm.test(\"Response body should be empty\", function () {",
+                  "    pm.expect(pm.response.text()).to.be.empty;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Books - Delete Book with Correct Id",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/books/:bookId",
+              "host": ["{{baseUrl}}"],
+              "path": ["books", ":bookId"],
+              "variable": [
+                {
+                  "key": "bookId",
+                  "value": "{{bookId}}",
+                  "description": "ID of the book to delete"
+                }
+              ]
+            },
+            "description": "Deletes a book using a correct/existing book ID ({{bookId}}). Protected endpoint.\n\nSecurity: Cookie-based (HttpOnly). Postman handles this automatically after login or registration."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 204 No Content\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});",
+                  "// After deleting, clear the variable so it's not accidentally reused for a non-existent ID",
+                  "// pm.collectionVariables.unset(\"bookId\"); // Or set to empty",
+                  "// console.log(\"bookId has been used for deletion.\");"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Books - Delete Book with Invalid Id",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/books/:bookId",
+              "host": ["{{baseUrl}}"],
+              "path": ["books", ":bookId"],
+              "variable": [
+                {
+                  "key": "bookId",
+                  "value": "INVALID_ID_FOR_DELETE_TEST",
+                  "description": "An invalid book ID for testing deletion"
+                }
+              ]
+            },
+            "description": "Attempts to delete a book using an invalid or non-existent book ID. Expected to fail (e.g., 404 Not Found or 400 Bad Request). Protected endpoint.\n\nSecurity: Cookie-based (HttpOnly). Postman handles this automatically after login or registration."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404 Not Found or 403 Forbidden\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([404, 403]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Library",
+      "description": "Requests related to Library",
+      "item": [
+        {
+          "name": "Library - Get My Library (Filter by Status)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/library",
+              "host": ["{{baseUrl}}"],
+              "path": ["library"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "",
+                  "description": "Filter library entries by status."
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Items per page"
+                }
+              ]
+            },
+            "description": "Retrieves books from the authenticated user's personal library.\nUse the 'status' query parameter for specific lists:\n- `status=reading` for \"All Reading Books\" & one part of \"All Unfinished Books\".\n- `status=to-read` for \"All Unreading Books\" & another part of \"All Unfinished Books\".\n- `status=finished` for \"All Finished Books\".\n- `status=on-hold` or `status=dnf` for other \"Unfinished\" states.\nOmitting 'status' returns all books in the library.\n\nSecurity: Cookie-based (HttpOnly). Postman handles this automatically after login or registration."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Response is a paginated list of library books\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.all.keys('totalItems', 'totalPages', 'currentPage', 'books');",
+                  "    pm.expect(jsonData.books).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Library - Get All Finished Books (User-Specific)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/library?status=finished&page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["library"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "finished",
+                  "description": "Filter by status 'finished'"
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Items per page"
+                }
+              ]
+            },
+            "description": "Get all books from the current user's library that are marked with the status 'finished'.\n\nSecurity: Cookie-based (HttpOnly). Postman handles this automatically after login or registration."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"All books in response have status 'finished' or userLibraryInfo.status 'finished'\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.books).to.be.an('array');",
+                  "    if (jsonData.books.length > 0) {",
+                  "        jsonData.books.forEach(function(bookEntry) {",
+                  "            // Depending on response structure, status might be directly on book or in userLibraryInfo",
+                  "            if (bookEntry.userLibraryInfo) {",
+                  "                 pm.expect(bookEntry.userLibraryInfo.status).to.eql('finished');",
+                  "            } else if (bookEntry.status) { // Fallback if status is directly on the book item",
+                  "                 pm.expect(bookEntry.status).to.eql('finished');",
+                  "            }",
+                  "        });",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Library - Get All Unfinished Books (User-Specific - Check Status)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/library?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["library"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Items per page"
+                }
+              ]
+            },
+            "description": "Gets all books in the user's library. 'Unfinished' books typically have statuses like 'to-read', 'reading', 'on-hold', or 'dnf'. You will need to inspect the 'status' field of each book in the response to identify unfinished ones. Alternatively, use the 'Library - Get My Library (Filter by Status)' request and set the status query parameter accordingly (e.g., status=reading).\n\nSecurity: Cookie-based (HttpOnly). Postman handles this automatically after login or registration."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response is a paginated list and contains 'books' array\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "    pm.expect(jsonData).to.have.all.keys('totalItems', 'totalPages', 'currentPage', 'books');",
+                  "    pm.expect(jsonData.books).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test(\"Each book in the library has userLibraryInfo with a status\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    if (jsonData.books && jsonData.books.length > 0) {",
+                  "        jsonData.books.forEach(function(bookEntry) {",
+                  "            pm.expect(bookEntry).to.have.property('userLibraryInfo');",
+                  "            pm.expect(bookEntry.userLibraryInfo).to.be.an('object');",
+                  "            pm.expect(bookEntry.userLibraryInfo).to.have.property('status');",
+                  "            // The actual status can be 'to-read', 'reading', 'finished', 'on-hold', 'dnf'",
+                  "            // This test just confirms the field exists for the user to check.",
+                  "        });",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Library - Add Book to My Library - addReading",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"reading\",\n  \"userNotes\": \"Excited to start!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/library/:bookId",
+              "host": ["{{baseUrl}}"],
+              "path": ["library", ":bookId"],
+              "variable": [
+                {
+                  "key": "bookId",
+                  "value": "{{bookId}}",
+                  "description": "ID of the master Book record"
+                }
+              ]
+            },
+            "description": "Add a book to the current user's library\n\nExample Scenario: Optional status, rating, and notes. Defaults to 'to-read' if status not provided.\n\nSecurity: Cookie-based (HttpOnly). Postman handles this automatically after login or registration."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201 Created or 409 Conflict if already in library\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([201, 409]);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "",
+                  "if (pm.response.code === 201) {",
+                  "    pm.test(\"Response has message and libraryEntry object for new entry\", function () {",
+                  "        pm.expect(jsonData).to.have.property('message');",
+                  "        pm.expect(jsonData).to.have.property('libraryEntry');",
+                  "        pm.expect(jsonData.libraryEntry).to.be.an('object');",
+                  "    });",
+                  "",
+                  "    pm.test(\"Library entry has correct status, notes, and book details\", function () {",
+                  "        const entry = jsonData.libraryEntry;",
+                  "        pm.expect(entry).to.have.property('id');",
+                  "        pm.expect(entry.status).to.eql('reading');",
+                  "        pm.expect(entry.userNotes).to.eql('Excited to start!');",
+                  "        pm.expect(entry).to.have.property('bookId');",
+                  "        // Assuming bookId is available as a variable used in the request path",
+                  "        // const requestedBookId = pm.variables.get(\"bookId1\") || pm.variables.get(\"bookId\"); ",
+                  "        // if (requestedBookId) { pm.expect(entry.bookId).to.eql(requestedBookId); }",
+                  "        pm.expect(entry.Book).to.be.an('object');",
+                  "        pm.expect(entry.Book).to.have.property('id');",
+                  "    });",
+                  "} else if (pm.response.code === 409) {",
+                  "    pm.test(\"Response message indicates book already in library for conflict\", function () {",
+                  "        pm.expect(jsonData).to.have.property('message');",
+                  "        // You might want to check for specific text in the conflict message",
+                  "        // pm.expect(jsonData.message.toLowerCase()).to.include('already in library');",
+                  "        // It might also return the existing libraryEntry",
+                  "        if (jsonData.libraryEntry) {",
+                  "             pm.expect(jsonData.libraryEntry).to.be.an('object');",
+                  "        }",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Library - Add Book to My Library - addFinished",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"finished\",\n  \"userRating\": 5,\n  \"userNotes\": \"Amazing recipes!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/library/:bookId",
+              "host": ["{{baseUrl}}"],
+              "path": ["library", ":bookId"],
+              "variable": [
+                {
+                  "key": "bookId",
+                  "value": "{{bookId}}",
+                  "description": "ID of the master Book record"
+                }
+              ]
+            },
+            "description": "Add a book to the current user's library\n\nExample Scenario: Optional status, rating, and notes. Defaults to 'to-read' if status not provided.\n\nSecurity: Cookie-based (HttpOnly). Postman handles this automatically after login or registration."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201 Created or 409 Conflict if already in library\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([201, 409]);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "",
+                  "if (pm.response.code === 201) {",
+                  "    pm.test(\"Response has message and libraryEntry object for new entry\", function () {",
+                  "        pm.expect(jsonData).to.have.property('message');",
+                  "        pm.expect(jsonData).to.have.property('libraryEntry');",
+                  "        pm.expect(jsonData.libraryEntry).to.be.an('object');",
+                  "    });",
+                  "",
+                  "    pm.test(\"Library entry has correct status, rating, notes, and book details\", function () {",
+                  "        const entry = jsonData.libraryEntry;",
+                  "        pm.expect(entry).to.have.property('id');",
+                  "        pm.expect(entry.status).to.eql('finished');",
+                  "        pm.expect(entry.userRating).to.eql(5);",
+                  "        pm.expect(entry.userNotes).to.eql('Amazing recipes!');",
+                  "        pm.expect(entry).to.have.property('bookId');",
+                  "        // const requestedBookId = pm.variables.get(\"bookId1\") || pm.variables.get(\"bookId\"); ",
+                  "        // if (requestedBookId) { pm.expect(entry.bookId).to.eql(requestedBookId); }",
+                  "        pm.expect(entry.Book).to.be.an('object');",
+                  "        pm.expect(entry.Book).to.have.property('id');",
+                  "    });",
+                  "} else if (pm.response.code === 409) {",
+                  "    pm.test(\"Response message indicates book already in library for conflict\", function () {",
+                  "        pm.expect(jsonData).to.have.property('message');",
+                  "        if (jsonData.libraryEntry) {",
+                  "             pm.expect(jsonData.libraryEntry).to.be.an('object');",
+                  "        }",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Library - Update Book in My Library - updateStatus",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"finished\",\n  \"userRating\": 4,\n  \"userNotes\": \"Loved the final chapter recipes.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/library/:bookId",
+              "host": ["{{baseUrl}}"],
+              "path": ["library", ":bookId"],
+              "variable": [
+                {
+                  "key": "bookId",
+                  "value": "{{bookId}}",
+                  "description": "ID of the master Book record in the library"
+                }
+              ]
+            },
+            "description": "Update a book's status, rating, or notes in the user's library\n\nExample Scenario: Fields to update (status, userRating, userNotes).\n\nSecurity: Cookie-based (HttpOnly). Postman handles this automatically after login or registration."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK for successful update\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has message and updated libraryEntry object\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    pm.expect(jsonData).to.have.property('libraryEntry');",
+                  "    pm.expect(jsonData.libraryEntry).to.be.an('object');",
+                  "});",
+                  "",
+                  "pm.test(\"Library entry reflects the updated status, rating, and notes\", function () {",
+                  "    const entry = pm.response.json().libraryEntry;",
+                  "    pm.expect(entry).to.have.property('id');",
+                  "    pm.expect(entry.status).to.eql('finished');",
+                  "    pm.expect(entry.userRating).to.eql(4);",
+                  "    pm.expect(entry.userNotes).to.eql('Loved the final chapter recipes.');",
+                  "    pm.expect(entry).to.have.property('bookId');",
+                  "    // const requestedBookId = pm.variables.get(\"bookId1\") || pm.variables.get(\"bookId\");",
+                  "    // if (requestedBookId) { pm.expect(entry.bookId).to.eql(requestedBookId); }",
+                  "    pm.expect(entry.Book).to.be.an('object');",
+                  "    pm.expect(entry.Book).to.have.property('id');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Library - Remove Book from My Library",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/library/:bookId",
+              "host": ["{{baseUrl}}"],
+              "path": ["library", ":bookId"],
+              "variable": [
+                {
+                  "key": "bookId",
+                  "value": "{{bookId}}",
+                  "description": "ID of the master Book record to remove from library"
+                }
+              ]
+            },
+            "description": "Remove a book from the current user's library\n\nSecurity: Cookie-based (HttpOnly). Postman handles this automatically after login or registration."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 204 No Content for successful removal\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});",
+                  "",
+                  "pm.test(\"Response body should be empty after successful removal\", function () {",
+                  "    pm.expect(pm.response.text()).to.be.empty;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "User Profile",
+      "description": "Requests related to User Profile",
+      "item": [
+        {
+          "name": "Users - Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "me"]
+            },
+            "description": "Get current user's profile\n\nSecurity: Cookie-based (HttpOnly). Postman handles this automatically after login or registration."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Response contains user profile data\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.user).to.be.an('object');",
+                  "    pm.expect(jsonData.user).to.have.all.keys('id', 'name', 'email', 'role');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Users - Update My Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated User Name\",\n  \"email\": \"updated@example.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "me"]
+            },
+            "description": "Update current user's profile\n\nSecurity: Cookie-based (HttpOnly). Postman handles this automatically after login or registration."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response contains the updated user profile data\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    // Assuming the API returns the 'AuthResponse' structure which contains a 'user' object",
+                  "    pm.expect(jsonData).to.have.property('user');",
+                  "    pm.expect(jsonData.user).to.be.an('object');",
+                  "});",
+                  "",
+                  "pm.test(\"User details are updated as expected\", function () {",
+                  "    const requestBody = JSON.parse(pm.request.body.raw);",
+                  "    const user = pm.response.json().user;",
+                  "",
+                  "    pm.expect(user).to.have.property('id');",
+                  "    pm.expect(user.name).to.eql(requestBody.name);",
+                  "    pm.expect(user.email).to.eql(requestBody.email);",
+                  "    pm.expect(user).to.have.property('role');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Users - Delete My Account",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "me"]
+            },
+            "description": "Delete current user's account\n\nSecurity: Cookie-based (HttpOnly). Postman handles this automatically after login or registration."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 204 No Content for successful account deletion\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});",
+                  "",
+                  "pm.test(\"Response body should be empty after successful deletion\", function () {",
+                  "    pm.expect(pm.response.text()).to.be.empty;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "description": "Requests related to Admin",
+      "item": [
+        {
+          "name": "Admin - List All Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "users"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Items per page"
+                }
+              ]
+            },
+            "description": "List all users (Admin)\n\nSecurity: Cookie-based (HttpOnly). Postman handles this automatically after login or registration."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK (or 403 if not Admin)\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 403]);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test(\"Response body is an object with a 'users' array and pagination info\", function () {",
+                  "        const jsonData = pm.response.json();",
+                  "        pm.expect(jsonData).to.be.an('object');",
+                  "        pm.expect(jsonData.users).to.be.an('array');",
+                  "        pm.expect(jsonData).to.have.all.keys('totalItems', 'totalPages', 'currentPage', 'users');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin - Bulk Create Books (Expanded Example)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"books\": [\n    {\n      \"title\": \"Advanced Bulk Systems\",\n      \"author\": \"Dr. Admin Supervisor\",\n      \"isbn\": \"978-3-16-112233-2\",\n      \"genre\": \"System Administration\",\n      \"description\": \"A comprehensive guide to managing bulk operations.\",\n      \"publishedDate\": \"2023-05-15\",\n      \"isFinished\": true,\n      \"isRead\": true,\n      \"review\": 5\n    },\n    {\n      \"title\": \"The Ongoing Saga of Microservices\",\n      \"author\": \"Dev Ops Team\",\n      \"isbn\": \"978-111-00-4444-3\",\n      \"genre\": \"Software Development\",\n      \"description\": \"Chapter 3: The Next Frontier (work in progress).\",\n      \"publishedDate\": \"2024-02-10\",\n      \"isFinished\": false,\n      \"isRead\": false\n    },\n    {\n      \"title\": \"Classic Algorithms Revisited\",\n      \"author\": \"Prof. Emeritus Coder\",\n      \"isbn\": \"978-1-00-123000-3\",\n      \"genre\": \"Computer Science\",\n      \"description\": \"Timeless algorithms explained for the modern era.\",\n      \"publishedDate\": \"2022-11-01\",\n      \"isFinished\": true,\n      \"isRead\": false\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/books/bulk",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "books", "bulk"]
+            },
+            "description": "Bulk create multiple book items (Admin).\nThis example includes three distinct book entries in the payload.\n\nSecurity: Cookie-based (HttpOnly). Postman handles this automatically after login or registration."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201 Created for successful bulk creation\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has message and a 'books' array\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    pm.expect(jsonData).to.have.property('books');",
+                  "    pm.expect(jsonData.books).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test(\"Number of created books matches number sent in request\", function () {",
+                  "    const requestBody = JSON.parse(pm.request.body.raw);",
+                  "    const responseData = pm.response.json();",
+                  "    if (requestBody.books && Array.isArray(requestBody.books)) {",
+                  "        pm.expect(responseData.books.length).to.eql(requestBody.books.length);",
+                  "    }",
+                  "});",
+                  "",
+                  "pm.test(\"Each created book in response has an ID and matches sent title\", function () {",
+                  "    const requestBody = JSON.parse(pm.request.body.raw);",
+                  "    const responseData = pm.response.json();",
+                  "    if (responseData.books && responseData.books.length > 0) {",
+                  "        responseData.books.forEach(function(createdBook, index) {",
+                  "            pm.expect(createdBook).to.have.property('id');",
+                  "            pm.expect(createdBook).to.have.property('title');",
+                  "            // Match against request data",
+                  "            if (requestBody.books && requestBody.books[index]) {",
+                  "                pm.expect(createdBook.title).to.eql(requestBody.books[index].title);",
+                  "                // You can add more assertions here for other fields like author, isbn, isFinished etc.",
+                  "                if (requestBody.books[index].hasOwnProperty('author')) {",
+                  "                    pm.expect(createdBook.author).to.eql(requestBody.books[index].author);",
+                  "                }",
+                  "                if (requestBody.books[index].hasOwnProperty('isbn')) {",
+                  "                    pm.expect(createdBook.isbn).to.eql(requestBody.books[index].isbn);",
+                  "                }",
+                  "                if (requestBody.books[index].hasOwnProperty('isFinished')) {",
+                  "                    pm.expect(createdBook.isFinished).to.eql(requestBody.books[index].isFinished);",
+                  "                }",
+                  "                if (requestBody.books[index].hasOwnProperty('isRead')) {",
+                  "                    pm.expect(createdBook.isRead).to.eql(requestBody.books[index].isRead);",
+                  "                }",
+                  "            }",
+                  "        });",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin - Delete All Books",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/books/all",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "books", "all"]
+            },
+            "description": "Deletes ALL books from the system. (Admin Access Required)\n\n⚠️ **Warning:** This is a destructive operation and will remove all book data. Use with extreme caution.\n\nSecurity: Cookie-based (HttpOnly) or other admin authorization. Postman typically handles cookies automatically after admin login."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK or 204 No Content\", function () {",
+                  "    // APIs might return 200 with a success message or 204 with no content",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+                  "});",
+                  "",
+                  "pm.test(\"Response body is empty for 204 or contains success message for 200\", function () {",
+                  "    if (pm.response.code === 200) {",
+                  "        const jsonData = pm.response.json();",
+                  "        pm.expect(jsonData).to.have.property('message');",
+                  "        // Example: pm.expect(jsonData.message).to.eql(\"All books deleted successfully\");",
+                  "        console.log(\"Response message: \" + jsonData.message);",
+                  "    } else if (pm.response.code === 204) {",
+                  "        pm.expect(pm.response.text()).to.be.empty;",
+                  "        console.log(\"All books deleted, no content in response.\");",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin - View Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "stats"]
+            },
+            "description": "View API statistics (Admin)\n\nSecurity: Cookie-based (HttpOnly). Postman handles this automatically after login or registration."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK for successful stats retrieval (or 403 if not Admin)\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 403]);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test(\"Response body is valid JSON and contains expected stats properties\", function () {",
+                  "        const jsonData = pm.response.json();",
+                  "        pm.expect(jsonData).to.be.an('object');",
+                  "        pm.expect(jsonData).to.have.property('totalUsers');",
+                  "        pm.expect(jsonData).to.have.property('totalBooks');",
+                  "        pm.expect(jsonData).to.have.property('visibleBooks');",
+                  "        pm.expect(jsonData).to.have.property('hiddenBooks');",
+                  "        pm.expect(jsonData).to.have.property('popularGenres');",
+                  "    });",
+                  "",
+                  "    pm.test(\"Stats values are of expected types\", function () {",
+                  "        const jsonData = pm.response.json();",
+                  "        pm.expect(jsonData.totalUsers).to.be.a('number');",
+                  "        pm.expect(jsonData.totalBooks).to.be.a('number');",
+                  "        pm.expect(jsonData.visibleBooks).to.be.a('number');",
+                  "        pm.expect(jsonData.hiddenBooks).to.be.a('number');",
+                  "        pm.expect(jsonData.popularGenres).to.be.an('array');",
+                  "    });",
+                  "",
+                  "    pm.test(\"Popular genres array (if not empty) contains objects with genre and count\", function () {",
+                  "        const jsonData = pm.response.json();",
+                  "        if (jsonData.popularGenres.length > 0) {",
+                  "            jsonData.popularGenres.forEach(function(item) {",
+                  "                pm.expect(item).to.be.an('object');",
+                  "                pm.expect(item).to.have.property('genre');",
+                  "                pm.expect(item).to.have.property('count');",
+                  "            });",
+                  "        }",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin - Delete User Account",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/users/:userId",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "users", ":userId"],
+              "variable": [
+                {
+                  "key": "userId",
+                  "value": "",
+                  "description": "ID of the user to delete"
+                }
+              ]
+            },
+            "description": "Delete a user account (Admin)\n\nSecurity: Cookie-based (HttpOnly). Postman handles this automatically after login or registration."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK or 204 No Content for successful deletion (or 403/404 for errors)\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 204, 403, 404, 400]);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test(\"Response has a success message\", function () {",
+                  "        const jsonData = pm.response.json();",
+                  "        pm.expect(jsonData).to.have.property('message');",
+                  "        pm.expect(jsonData.message.toLowerCase()).to.include('deleted successfully');",
+                  "    });",
+                  "} else if (pm.response.code === 204) {",
+                  "    pm.test(\"Response body should be empty for 204 No Content\", function () {",
+                  "        pm.expect(pm.response.text()).to.be.empty;",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin - Set Book Visibility",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isVisible\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/books/:bookId/visibility",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "books", ":bookId", "visibility"],
+              "variable": [
+                {
+                  "key": "bookId",
+                  "value": "{{bookId}}",
+                  "description": "ID of the book"
+                }
+              ]
+            },
+            "description": "Set Book Visibility (Admin)\n\nSecurity: Cookie-based (HttpOnly). Postman handles this automatically after login or registration."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK for successful visibility update (or 403/404 for errors)\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 403, 404, 400]);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test(\"Response body is the updated Book object\", function () {",
+                  "        const jsonData = pm.response.json();",
+                  "        pm.expect(jsonData).to.be.an('object');",
+                  "        pm.expect(jsonData).to.have.property('id');",
+                  "        pm.expect(jsonData).to.have.property('title');",
+                  "        pm.expect(jsonData).to.have.property('visibility');",
+                  "    });",
+                  "",
+                  "    pm.test(\"Book visibility in response matches the value sent in the request\", function () {",
+                  "        const requestBody = JSON.parse(pm.request.body.raw);",
+                  "        const responseData = pm.response.json();",
+                  "        pm.expect(responseData.visibility).to.eql(requestBody.isVisible);",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
