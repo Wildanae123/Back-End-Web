@@ -1,6 +1,6 @@
 // src/controllers/libraryController.js
-const { UserBook, Book, User } = require('../models'); // User may not be needed directly here but good to have
-const { Op } = require('sequelize');
+const { UserBook, Book, User } = require("../models"); // User may not be needed directly here but good to have
+const { Op } = require("sequelize");
 
 // --- ADD A BOOK TO THE CURRENT USER'S LIBRARY ---
 exports.addBookToLibrary = async (req, res, next) => {
@@ -10,9 +10,13 @@ exports.addBookToLibrary = async (req, res, next) => {
 
   try {
     // 1. Check if the book itself exists and is visible
-    const book = await Book.findOne({ where: { id: bookId, visibility: true } });
+    const book = await Book.findOne({
+      where: { id: bookId, visibility: true },
+    });
     if (!book) {
-      return res.status(404).json({ message: 'Book not found or not available.' });
+      return res
+        .status(404)
+        .json({ message: "Book not found or not available." });
     }
 
     // 2. Check if the book is already in the user's library
@@ -22,7 +26,8 @@ exports.addBookToLibrary = async (req, res, next) => {
 
     if (existingEntry) {
       return res.status(409).json({
-        message: 'This book is already in your library. Use the update (PUT) endpoint to change its status or details.',
+        message:
+          "This book is already in your library. Use the update (PUT) endpoint to change its status or details.",
         libraryEntry: existingEntry,
       });
     }
@@ -31,23 +36,25 @@ exports.addBookToLibrary = async (req, res, next) => {
     const newLibraryEntry = await UserBook.create({
       userId,
       bookId,
-      status: status || 'to-read', // Default status if not provided
+      status: status || "to-read", // Default status if not provided
       userRating: userRating || null,
       userNotes: userNotes || null,
     });
 
     // Optionally, include book details in the response
     const entryWithBook = await UserBook.findByPk(newLibraryEntry.id, {
-        include: [{ model: Book, as: 'Book' }] // Ensure 'Book' is the correct alias or model name
+      include: [{ model: Book, as: "Book" }], // Ensure 'Book' is the correct alias or model name
     });
 
     res.status(201).json({
-      message: 'Book added to your library successfully.',
+      message: "Book added to your library successfully.",
       libraryEntry: entryWithBook,
     });
   } catch (error) {
-    if (error.name === 'SequelizeValidationError') {
-      return res.status(400).json({ message: error.errors.map(e => e.message).join(', ') });
+    if (error.name === "SequelizeValidationError") {
+      return res
+        .status(400)
+        .json({ message: error.errors.map((e) => e.message).join(", ") });
     }
     next(error);
   }
@@ -65,27 +72,33 @@ exports.updateLibraryEntry = async (req, res, next) => {
     });
 
     if (!libraryEntry) {
-      return res.status(404).json({ message: 'Book not found in your library. Add it first.' });
+      return res
+        .status(404)
+        .json({ message: "Book not found in your library. Add it first." });
     }
 
     // Update only provided fields
     if (status !== undefined) libraryEntry.status = status;
-    if (userRating !== undefined) libraryEntry.userRating = userRating === '' ? null : userRating; // Allow clearing rating
-    if (userNotes !== undefined) libraryEntry.userNotes = userNotes === '' ? null : userNotes; // Allow clearing notes
+    if (userRating !== undefined)
+      libraryEntry.userRating = userRating === "" ? null : userRating; // Allow clearing rating
+    if (userNotes !== undefined)
+      libraryEntry.userNotes = userNotes === "" ? null : userNotes; // Allow clearing notes
 
     await libraryEntry.save();
 
     const updatedEntryWithBook = await UserBook.findByPk(libraryEntry.id, {
-        include: [{ model: Book, as: 'Book' }]
+      include: [{ model: Book, as: "Book" }],
     });
 
     res.status(200).json({
-      message: 'Library entry updated successfully.',
+      message: "Library entry updated successfully.",
       libraryEntry: updatedEntryWithBook,
     });
   } catch (error) {
-    if (error.name === 'SequelizeValidationError') {
-      return res.status(400).json({ message: error.errors.map(e => e.message).join(', ') });
+    if (error.name === "SequelizeValidationError") {
+      return res
+        .status(400)
+        .json({ message: error.errors.map((e) => e.message).join(", ") });
     }
     next(error);
   }
@@ -102,7 +115,9 @@ exports.removeBookFromLibrary = async (req, res, next) => {
     });
 
     if (!libraryEntry) {
-      return res.status(404).json({ message: 'Book not found in your library.' });
+      return res
+        .status(404)
+        .json({ message: "Book not found in your library." });
     }
 
     await libraryEntry.destroy();
@@ -111,7 +126,6 @@ exports.removeBookFromLibrary = async (req, res, next) => {
     next(error);
   }
 };
-
 
 // --- GET ALL BOOKS IN THE CURRENT USER'S LIBRARY (Optional - can replace/enhance existing bookController functions) ---
 exports.getUserLibrary = async (req, res, next) => {
@@ -130,28 +144,31 @@ exports.getUserLibrary = async (req, res, next) => {
 
     const { count, rows: userBooks } = await UserBook.findAndCountAll({
       where: whereClauseUserBook,
-      include: [{
-        model: Book,
-        as: 'Book', // Ensure this alias matches your UserBook model association
-        where: { visibility: true }, // Only include visible books
-        required: true // INNER JOIN to only get UserBook entries with an existing, visible Book
-      }],
+      include: [
+        {
+          model: Book,
+          as: "Book", // Ensure this alias matches your UserBook model association
+          where: { visibility: true }, // Only include visible books
+          required: true, // INNER JOIN to only get UserBook entries with an existing, visible Book
+        },
+      ],
       limit,
       offset,
-      order: [[{ model: Book, as: 'Book' }, 'title', 'ASC']], // Order by book title
+      order: [[{ model: Book, as: "Book" }, "title", "ASC"]], // Order by book title
     });
 
     // Transform data to nest UserBook details within each book or provide a combined object
-    const libraryBooks = userBooks.map(ub => ({
+    const libraryBooks = userBooks.map((ub) => ({
       ...ub.Book.toJSON(), // Spread book details
-      userLibraryInfo: {    // Add user-specific library info
+      userLibraryInfo: {
+        // Add user-specific library info
         userBookId: ub.id,
         status: ub.status,
         userRating: ub.userRating,
         userNotes: ub.userNotes,
         addedAt: ub.createdAt, // Timestamps from UserBook entry
-        updatedAt: ub.updatedAt
-      }
+        updatedAt: ub.updatedAt,
+      },
     }));
 
     res.status(200).json({

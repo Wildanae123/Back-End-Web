@@ -1,6 +1,6 @@
 // src/models/User.js
 module.exports = (sequelize, DataTypes) => {
-  const User = sequelize.define('User', {
+  const User = sequelize.define("User", {
     id: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
@@ -23,8 +23,8 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false, // Will be true if using Auth0 and not storing passwords
     },
     role: {
-      type: DataTypes.ENUM('user', 'admin', 'guest'),
-      defaultValue: 'user',
+      type: DataTypes.ENUM("user", "admin", "guest"),
+      defaultValue: "user",
     },
     // Add other fields from "User Profile" section if needed
     // e.g., profilePictureUrl: DataTypes.STRING,
@@ -34,13 +34,13 @@ module.exports = (sequelize, DataTypes) => {
   User.associate = (models) => {
     // A User can create/own many Books
     User.hasMany(models.Book, {
-      foreignKey: 'userId',
-      as: 'createdBooks',
+      foreignKey: "userId",
+      as: "createdBooks",
     });
     // User has many entries in UserBook (their library)
     User.hasMany(models.UserBook, {
-      foreignKey: 'userId',
-      as: 'libraryEntries',
+      foreignKey: "userId",
+      as: "libraryEntries",
     });
     // Optional: Through association for convenience
     // User.belongsToMany(models.Book, {
@@ -50,6 +50,6 @@ module.exports = (sequelize, DataTypes) => {
     //   as: 'libraryBooks'
     // });
   };
-  
+
   return User;
 };

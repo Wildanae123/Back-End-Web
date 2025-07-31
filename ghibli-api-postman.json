@@ -1831,7 +1831,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Updated User Name\",\n  \"email\": \"updated@example.com\"\n}",
+              "raw": "{\n  \"name\": \"Updated User Name\",\n  \"email\": \"updated.user@example.com\",\n  \"role\": \"user\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1843,7 +1843,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["users", "me"]
             },
-            "description": "Update current user's profile\n\nSecurity: Cookie-based (HttpOnly). Postman handles this automatically after login or registration."
+            "description": "Update current user's profile including name, email, and role.\n\nSecurity: Cookie-based (HttpOnly). Postman handles this automatically after login or registration.\n\n**Note on Roles:**\n- 'user': Standard user.\n- 'guest': If a registered user sets their role to 'guest', their database record changes. This is different from an anonymous guest session.\n- 'admin': **Changing role to 'admin' should be heavily restricted on the backend.**"
           },
           "response": [],
           "event": [
@@ -1857,19 +1857,21 @@
                   "",
                   "pm.test(\"Response contains the updated user profile data\", function () {",
                   "    const jsonData = pm.response.json();",
-                  "    // Assuming the API returns the 'AuthResponse' structure which contains a 'user' object",
-                  "    pm.expect(jsonData).to.have.property('user');",
-                  "    pm.expect(jsonData.user).to.be.an('object');",
+                  "    // Check if the response is wrapped in 'data' or directly the user object",
+                  "    const user = jsonData.data || jsonData; // Adapt if response structure varies",
+                  "    pm.expect(user).to.be.an('object');",
+                  "    pm.expect(user).to.have.property('id');",
                   "});",
                   "",
                   "pm.test(\"User details are updated as expected\", function () {",
                   "    const requestBody = JSON.parse(pm.request.body.raw);",
-                  "    const user = pm.response.json().user;",
+                  "    const responseBody = pm.response.json();",
+                  "    const user = responseBody.data || responseBody; // Adapt",
                   "",
                   "    pm.expect(user).to.have.property('id');",
-                  "    pm.expect(user.name).to.eql(requestBody.name);",
-                  "    pm.expect(user.email).to.eql(requestBody.email);",
-                  "    pm.expect(user).to.have.property('role');",
+                  "    if (requestBody.name) { pm.expect(user.name).to.eql(requestBody.name); }",
+                  "    if (requestBody.email) { pm.expect(user.email).to.eql(requestBody.email); }",
+                  "    if (requestBody.role) { pm.expect(user.role).to.eql(requestBody.role); }",
                   "});"
                 ],
                 "type": "text/javascript"

@@ -136,16 +136,16 @@ NODE_ENV=development
 DB_HOST=db              # <-- IMPORTANT: Use the Docker service name, not 'localhost'
 DB_PORT=5432            # Standard PostgreSQL port (internal to Docker network)
 DB_USER=ghibli_api_user # You'll define this in docker-compose.yml for Postgres
-DB_PASSWORD=your_strong_password_for_api_user # You'll define this in docker-compose.yml
+DB_PASSWORD=your_strong_password_for_api_user # (e.g MySecureAppPass123!)
 DB_NAME=ghibli_food_db  # You'll define this in docker-compose.yml
 
 # JWT
-JWT_SECRET=your_VERY_strong_And_RaNDOM_jwt_secret_here_MAKE_IT_LONG
+JWT_SECRET=your_RaNDOM_jwt_secret # (command to create node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
 JWT_EXPIRES_IN=1d
 
-# AUTH0 (if used later)
-# AUTH0_DOMAIN=...
-# AUTH0_AUDIENCE=...
+# Auth0 (Fill these if directly integrating Auth0 for token validation)
+# AUTH0_DOMAIN=your-auth0-domain.auth0.com
+# AUTH0_AUDIENCE=your-api-identifier
 ```
 
 ### 🚀 Step 2: Run the Application with Docker Compose

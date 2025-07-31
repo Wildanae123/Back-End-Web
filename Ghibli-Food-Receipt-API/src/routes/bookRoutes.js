@@ -10,7 +10,10 @@ const {
   getBooksByFinishedStatus,
 } = require("../controllers/bookController"); // Fix import
 const { protect } = require("../middlewares/authMiddleware"); // Import protect middleware
-const { validateBookCreation, validateBookUpdate } = require("../middlewares/validationMiddleware"); // Import validation middleware
+const {
+  validateBookCreation,
+  validateBookUpdate,
+} = require("../middlewares/validationMiddleware"); // Import validation middleware
 
 const router = express.Router();
 

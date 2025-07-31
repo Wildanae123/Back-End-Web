@@ -82,13 +82,13 @@ module.exports = (sequelize, DataTypes) => {
     },
   });
 
-Book.associate = (models) => {
-  Book.belongsTo(models.User, { foreignKey: 'userId', as: 'creator' });
-  // Book has many entries in UserBook (users who have this book in their library)
-  Book.hasMany(models.UserBook, { foreignKey: 'bookId', as: 'libraryUsers' });
-  // Through association for convenience (optional)
-  // Book.belongsToMany(models.User, { through: models.UserBook, foreignKey: 'bookId', otherKey: 'userId', as: 'usersInLibrary' });
-};
+  Book.associate = (models) => {
+    Book.belongsTo(models.User, { foreignKey: "userId", as: "creator" });
+    // Book has many entries in UserBook (users who have this book in their library)
+    Book.hasMany(models.UserBook, { foreignKey: "bookId", as: "libraryUsers" });
+    // Through association for convenience (optional)
+    // Book.belongsToMany(models.User, { through: models.UserBook, foreignKey: 'bookId', otherKey: 'userId', as: 'usersInLibrary' });
+  };
 
   return Book;
 };

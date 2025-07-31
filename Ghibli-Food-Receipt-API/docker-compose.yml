@@ -1,5 +1,5 @@
 # docker-compose.yml
-version: '3.8' # Specify a version for Docker Compose file format
+version: "3.8" # Specify a version for Docker Compose file format
 
 services:
   db: # This is our PostgreSQL database service

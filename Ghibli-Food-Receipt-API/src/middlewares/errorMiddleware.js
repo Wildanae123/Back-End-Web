@@ -17,7 +17,7 @@ const errorMiddleware = (err, req, res, next) => {
   res.json({
     message: err.message,
     // Only show the stack trace in development mode for security reasons
-    stack: process.env.NODE_ENV === 'production' ? '🥞' : err.stack,
+    stack: process.env.NODE_ENV === "production" ? "🥞" : err.stack,
   });
 };
 

@@ -13,11 +13,19 @@ const {
 const config = require("./config/config");
 
 const app = express();
+const frontendOrigin = process.env.FRONTEND_ORIGIN || 'http://localhost:5173';
 
 // Core Middlewares
-app.use(cors()); // Enable CORS
+const corsOptions = {
+  origin: frontendOrigin,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
+
+app.use(cors(corsOptions));
 app.use(helmet()); // Set security HTTP headers
-app.use(express.json({ limit: "10kb" })); // JSON request body parser
+app.use(express.json());
 app.use(express.urlencoded({ extended: true, limit: "10kb" })); // URL-encoded request body parser
 app.use(cookieParser());
 
@@ -35,7 +43,7 @@ app.use(rateLimiter);
 app.get("/", (req, res) => {
   res.send("Welcome to the Ghibli Food Bookshelf API!");
 });
-app.use('/api/v1', mainRouter);
+app.use("/api/v1", mainRouter);
 
 // Handle 404 Not Found
 app.use(notFoundMiddleware);

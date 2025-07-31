@@ -1,9 +1,9 @@
 // src/config/database.js
-const path = require('path');
+const path = require("path");
 // Ensure dotenv loads variables from the project root .env file
-require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
+require("dotenv").config({ path: path.resolve(__dirname, "../../.env") });
 
-const appConfig = require('./config'); // Your existing src/config/config.js
+const appConfig = require("./config"); // Your existing src/config/config.js
 
 // sequelize-cli expects specific environment keys (development, production, test)
 module.exports = {

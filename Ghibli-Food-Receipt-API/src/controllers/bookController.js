@@ -1,11 +1,17 @@
 // src/controllers/bookController.js
-const { Op } = require('sequelize');
-const { Book, UserBook, User } = require('../models');
+const { Op } = require("sequelize");
+const { Book, UserBook, User } = require("../models");
 
 // --- LIST ALL BOOKS (with pagination and filtering) ---
 exports.listBooks = async (req, res, next) => {
   try {
-    const { search, genre: genreQuery, author: authorQuery, page, limit: queryLimit } = req.query;
+    const {
+      search,
+      genre: genreQuery,
+      author: authorQuery,
+      page,
+      limit: queryLimit,
+    } = req.query;
     let whereClause = { visibility: true }; // Only show visible books by default
 
     if (search) {
@@ -33,7 +39,7 @@ exports.listBooks = async (req, res, next) => {
       where: whereClause,
       limit,
       offset,
-      order: [['title', 'ASC']], // Example: order by title
+      order: [["title", "ASC"]], // Example: order by title
     });
 
     res.status(200).json({
@@ -51,10 +57,10 @@ exports.listBooks = async (req, res, next) => {
 exports.getBookById = async (req, res, next) => {
   try {
     const book = await Book.findOne({
-      where: { id: req.params.id, visibility: true }
+      where: { id: req.params.id, visibility: true },
     });
     if (!book) {
-      return res.status(404).json({ message: 'Book not found or not visible' });
+      return res.status(404).json({ message: "Book not found or not visible" });
     }
     res.status(200).json(book);
   } catch (error) {
@@ -66,35 +72,63 @@ exports.getBookById = async (req, res, next) => {
 exports.createBook = async (req, res, next) => {
   try {
     const {
-      title, author, isbn, genre, description, publishedDate,
-      bookCoverUrl, isRead, review, cuisineType, dietaryCategory,
-      difficultyLevel, ingredients, sampleRecipes, authorBio,
+      title,
+      author,
+      isbn,
+      genre,
+      description,
+      publishedDate,
+      bookCoverUrl,
+      isRead,
+      review,
+      cuisineType,
+      dietaryCategory,
+      difficultyLevel,
+      ingredients,
+      sampleRecipes,
+      authorBio,
     } = req.body;
 
     const userId = req.user.id;
 
     if (!title || !author || !genre) {
-      return res.status(400).json({ message: 'Title, Author, and Genre are required.' });
+      return res
+        .status(400)
+        .json({ message: "Title, Author, and Genre are required." });
     }
 
     // Assuming req.user.id is available if books are user-specific upon creation
     // const userId = req.user ? req.user.id : null;
 
     const newBook = await Book.create({
-      title, author, isbn: isbn || null, genre, description: description || null,
-      publishedDate: publishedDate || null, bookCoverUrl: bookCoverUrl || null,
-      isRead: isRead || false, review: isRead && review ? review : null,
-      cuisineType: cuisineType || null, dietaryCategory: dietaryCategory || null,
-      difficultyLevel: difficultyLevel || null, ingredients: ingredients || null,
-      sampleRecipes: sampleRecipes || null, authorBio: authorBio || null,
+      title,
+      author,
+      isbn: isbn || null,
+      genre,
+      description: description || null,
+      publishedDate: publishedDate || null,
+      bookCoverUrl: bookCoverUrl || null,
+      isRead: isRead || false,
+      review: isRead && review ? review : null,
+      cuisineType: cuisineType || null,
+      dietaryCategory: dietaryCategory || null,
+      difficultyLevel: difficultyLevel || null,
+      ingredients: ingredients || null,
+      sampleRecipes: sampleRecipes || null,
+      authorBio: authorBio || null,
       visibility: true,
       userId,
     });
 
     res.status(201).json(newBook);
   } catch (error) {
-    if (error.name === 'SequelizeValidationError' || error.name === 'SequelizeUniqueConstraintError') {
-      return res.status(400).json({ message: error.errors.map(e => e.message).join(', ') });
+    if (
+      error.name === "SequelizeValidationError" ||
+      error.name === "SequelizeUniqueConstraintError"
+    ) {
+      return res
+        .status(400)
+        .json({ message: error.errors.map((e) => e.message).join(", ") });
     }
     next(error);
   }
@@ -107,18 +141,34 @@ exports.updateBook = async (req, res, next) => {
     const book = await Book.findByPk(id);
 
     if (!book) {
-      return res.status(404).json({ message: 'Book not found' });
+      return res.status(404).json({ message: "Book not found" });
     }
 
-    if (book.userId !== req.user.id && req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'Forbidden: You are not authorized to update this book.' });
+    if (book.userId !== req.user.id && req.user.role !== "admin") {
+      return res
+        .status(403)
+        .json({
+          message: "Forbidden: You are not authorized to update this book.",
+        });
     }
 
     // Fields that can be updated (excluding id, visibility handled by admin, etc.)
     const {
-      title, author, isbn, genre, description, publishedDate,
-      bookCoverUrl, isRead, review, cuisineType, dietaryCategory,
-      difficultyLevel, ingredients, sampleRecipes, authorBio,
+      title,
+      author,
+      isbn,
+      genre,
+      description,
+      publishedDate,
+      bookCoverUrl,
+      isRead,
+      review,
+      cuisineType,
+      dietaryCategory,
+      difficultyLevel,
+      ingredients,
+      sampleRecipes,
+      authorBio,
     } = req.body;
 
     // Update only the fields that are provided in the request body
@@ -128,22 +178,33 @@ exports.updateBook = async (req, res, next) => {
       isbn: isbn !== undefined ? isbn : book.isbn,
       genre: genre !== undefined ? genre : book.genre,
       description: description !== undefined ? description : book.description,
-      publishedDate: publishedDate !== undefined ? publishedDate : book.publishedDate,
-      bookCoverUrl: bookCoverUrl !== undefined ? bookCoverUrl : book.bookCoverUrl,
+      publishedDate:
+        publishedDate !== undefined ? publishedDate : book.publishedDate,
+      bookCoverUrl:
+        bookCoverUrl !== undefined ? bookCoverUrl : book.bookCoverUrl,
       isRead: isRead !== undefined ? isRead : book.isRead,
-      review: isRead !== undefined ? (isRead && review ? review : null) : book.review,
+      review:
+        isRead !== undefined ? (isRead && review ? review : null) : book.review,
       cuisineType: cuisineType !== undefined ? cuisineType : book.cuisineType,
-      dietaryCategory: dietaryCategory !== undefined ? dietaryCategory : book.dietaryCategory,
-      difficultyLevel: difficultyLevel !== undefined ? difficultyLevel : book.difficultyLevel,
+      dietaryCategory:
+        dietaryCategory !== undefined ? dietaryCategory : book.dietaryCategory,
+      difficultyLevel:
+        difficultyLevel !== undefined ? difficultyLevel : book.difficultyLevel,
       ingredients: ingredients !== undefined ? ingredients : book.ingredients,
-      sampleRecipes: sampleRecipes !== undefined ? sampleRecipes : book.sampleRecipes,
+      sampleRecipes:
+        sampleRecipes !== undefined ? sampleRecipes : book.sampleRecipes,
       authorBio: authorBio !== undefined ? authorBio : book.authorBio,
     });
 
     res.status(200).json(updatedBook);
   } catch (error) {
-    if (error.name === 'SequelizeValidationError' || error.name === 'SequelizeUniqueConstraintError') {
-      return res.status(400).json({ message: error.errors.map(e => e.message).join(', ') });
+    if (
+      error.name === "SequelizeValidationError" ||
+      error.name === "SequelizeUniqueConstraintError"
+    ) {
+      return res
+        .status(400)
+        .json({ message: error.errors.map((e) => e.message).join(", ") });
     }
     next(error);
   }
@@ -156,11 +217,15 @@ exports.deleteBook = async (req, res, next) => {
     const book = await Book.findByPk(id);
 
     if (!book) {
-      return res.status(404).json({ message: 'Book not found' });
+      return res.status(404).json({ message: "Book not found" });
     }
 
-    if (book.userId !== req.user.id && req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'Forbidden: You are not authorized to delete this book.' });
+    if (book.userId !== req.user.id && req.user.role !== "admin") {
+      return res
+        .status(403)
+        .json({
+          message: "Forbidden: You are not authorized to delete this book.",
+        });
     }
 
     await book.destroy();
@@ -181,21 +246,30 @@ exports.getBooksByReadingStatus = async (req, res, next) => {
     const { count, rows: userBooks } = await UserBook.findAndCountAll({
       where: {
         userId,
-        status: 'reading', // Or ['reading', 'to-read'] if you want to combine
+        status: "reading", // Or ['reading', 'to-read'] if you want to combine
       },
-      include: [{
-        model: Book,
-        as: 'Book', // Use the alias defined in UserBook.associate if you set one, or just model name
-        where: { visibility: true }, // Ensure the book itself is visible
-        required: true // Ensures only UserBook entries with an existing, visible Book are returned
-      }],
+      include: [
+        {
+          model: Book,
+          as: "Book", // Use the alias defined in UserBook.associate if you set one, or just model name
+          where: { visibility: true }, // Ensure the book itself is visible
+          required: true, // Ensures only UserBook entries with an existing, visible Book are returned
+        },
+      ],
       limit,
       offset,
-      order: [[{ model: Book, as: 'Book' }, 'title', 'ASC']], // Order by book title
+      order: [[{ model: Book, as: "Book" }, "title", "ASC"]], // Order by book title
     });
 
-    const books = userBooks.map(ub => ({ ...ub.Book.toJSON(), userLibraryInfo: { status: ub.status, userRating: ub.userRating, userNotes: ub.userNotes, userBookId: ub.id } }));
-
+    const books = userBooks.map((ub) => ({
+      ...ub.Book.toJSON(),
+      userLibraryInfo: {
+        status: ub.status,
+        userRating: ub.userRating,
+        userNotes: ub.userNotes,
+        userBookId: ub.id,
+      },
+    }));
 
     res.status(200).json({
       totalItems: count,
@@ -219,20 +293,30 @@ exports.getBooksByFinishedStatus = async (req, res, next) => {
     const { count, rows: userBooks } = await UserBook.findAndCountAll({
       where: {
         userId,
-        status: 'finished',
+        status: "finished",
       },
-      include: [{
-        model: Book,
-        as: 'Book',
-        where: { visibility: true },
-        required: true
-      }],
+      include: [
+        {
+          model: Book,
+          as: "Book",
+          where: { visibility: true },
+          required: true,
+        },
+      ],
       limit,
       offset,
-      order: [[{ model: Book, as: 'Book' }, 'title', 'ASC']],
+      order: [[{ model: Book, as: "Book" }, "title", "ASC"]],
     });
 
-    const books = userBooks.map(ub => ({ ...ub.Book.toJSON(), userLibraryInfo: { status: ub.status, userRating: ub.userRating, userNotes: ub.userNotes, userBookId: ub.id } }));
+    const books = userBooks.map((ub) => ({
+      ...ub.Book.toJSON(),
+      userLibraryInfo: {
+        status: ub.status,
+        userRating: ub.userRating,
+        userNotes: ub.userNotes,
+        userBookId: ub.id,
+      },
+    }));
 
     res.status(200).json({
       totalItems: count,
